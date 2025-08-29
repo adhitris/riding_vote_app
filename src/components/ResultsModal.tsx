@@ -18,6 +18,29 @@ interface VoteResult {
   type: 'date' | 'destination'
 }
 
+interface VoteData {
+  id: string
+  voter_name: string
+  trip_id: string
+  destination_id: string | null
+  date_id: string | null
+  created_at: string
+}
+
+interface DestinationData {
+  id: string
+  name: string
+  trip_id: string
+  created_at: string
+}
+
+interface DateData {
+  id: string
+  date: string
+  trip_id: string
+  created_at: string
+}
+
 export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProps) {
   const [dateResults, setDateResults] = useState<VoteResult[]>([])
   const [destinationResults, setDestinationResults] = useState<VoteResult[]>([])
@@ -57,9 +80,11 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
 
       // Process destination results
       const destMap = new Map<string, VoteResult>()
-      allVotes?.forEach((vote: any) => {
+      const typedAllVotes = allVotes as VoteData[]
+      typedAllVotes?.forEach((vote: VoteData) => {
         if (vote.destination_id) {
-          const destination = destinations?.find(d => d.id === vote.destination_id)
+          const typedDestinations = destinations as DestinationData[]
+          const destination = typedDestinations?.find(d => d.id === vote.destination_id)
           if (destination) {
             const existing = destMap.get(destination.id) || {
               id: destination.id,
@@ -77,9 +102,10 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
 
       // Process date results
       const dateMap = new Map<string, VoteResult>()
-      allVotes?.forEach((vote: any) => {
+      typedAllVotes?.forEach((vote: VoteData) => {
         if (vote.date_id) {
-          const date = dates?.find(d => d.id === vote.date_id)
+          const typedDates = dates as DateData[]
+          const date = typedDates?.find(d => d.id === vote.date_id)
           if (date) {
             const existing = dateMap.get(date.id) || {
               id: date.id,
