@@ -28,71 +28,70 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
 
     setLoading(true)
     try {
-      // Fetch destination votes
-      const { data: destinationVotes, error: destError } = await supabase
+      // Fetch all votes for this trip
+      const { data: allVotes, error: votesError } = await supabase
         .from('votes')
-        .select(`
-          destination_id,
-          voter_name,
-          destinations (
-            id,
-            name
-          )
-        `)
+        .select('*')
         .eq('trip_id', trip.id)
-        .not('destination_id', 'is', null)
+
+      if (votesError) throw votesError
+      console.log('All votes data:', allVotes)
+
+      // Fetch destinations for this trip
+      const { data: destinations, error: destError } = await supabase
+        .from('destinations')
+        .select('*')
+        .eq('trip_id', trip.id)
 
       if (destError) throw destError
+      console.log('Destinations data:', destinations)
 
-      // Fetch date votes
-      const { data: dateVotes, error: dateError } = await supabase
-        .from('votes')
-        .select(`
-          date_id,
-          voter_name,
-          riding_dates (
-            id,
-            date
-          )
-        `)
+      // Fetch dates for this trip
+      const { data: dates, error: datesError } = await supabase
+        .from('riding_dates')
+        .select('*')
         .eq('trip_id', trip.id)
-        .not('date_id', 'is', null)
 
-      if (dateError) throw dateError
+      if (datesError) throw datesError
+      console.log('Dates data:', dates)
 
       // Process destination results
       const destMap = new Map<string, VoteResult>()
-      destinationVotes?.forEach((vote: {destinations: {id: string, name: string}[], voter_name: string}) => {
-        if (vote.destinations && vote.destinations.length > 0) {
-          const dest = vote.destinations[0] // Take the first destination
-          const existing = destMap.get(dest.id) || {
-            id: dest.id,
-            name: dest.name,
-            vote_count: 0,
-            voters: [] as string[],
-            type: 'destination' as const
+      allVotes?.forEach((vote: any) => {
+        if (vote.destination_id) {
+          const destination = destinations?.find(d => d.id === vote.destination_id)
+          if (destination) {
+            const existing = destMap.get(destination.id) || {
+              id: destination.id,
+              name: destination.name,
+              vote_count: 0,
+              voters: [] as string[],
+              type: 'destination' as const
+            }
+            existing.vote_count++
+            existing.voters.push(vote.voter_name)
+            destMap.set(destination.id, existing)
           }
-          existing.vote_count++
-          existing.voters.push(vote.voter_name)
-          destMap.set(dest.id, existing)
         }
       })
 
       // Process date results
       const dateMap = new Map<string, VoteResult>()
-      dateVotes?.forEach((vote: {riding_dates: {id: string, date: string}[], voter_name: string}) => {
-        if (vote.riding_dates && vote.riding_dates.length > 0) {
-          const date = vote.riding_dates[0] // Take the first date
-          const existing = dateMap.get(date.id) || {
-            id: date.id,
-            name: formatDate(date.date),
-            vote_count: 0,
-            voters: [] as string[],
-            type: 'date' as const
+      allVotes?.forEach((vote: any) => {
+        if (vote.date_id) {
+          const date = dates?.find(d => d.id === vote.date_id)
+          if (date) {
+            const existing = dateMap.get(date.id) || {
+              id: date.id,
+              name: formatDate(date.date),
+              vote_count: 0,
+              voters: [] as string[],
+              type: 'date' as const
+            }
+            existing.vote_count++
+            existing.voters.push(vote.voter_name)
+            dateMap.set(date.id, existing)
           }
-          existing.vote_count++
-          existing.voters.push(vote.voter_name)
-          dateMap.set(date.id, existing)
         }
       })
 
