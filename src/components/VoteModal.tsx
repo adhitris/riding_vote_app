@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Trip, Destination, RidingDate } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -23,23 +23,19 @@ export default function VoteModal({ isOpen, onClose, trip, onVoteSuccess }: Vote
     if (trip && isOpen) {
       fetchTripOptions()
     }
-  }, [trip, isOpen])
+  }, [trip, isOpen, fetchTripOptions])
 
-  const fetchTripOptions = async () => {
+  const fetchTripOptions = useCallback(async () => {
     if (!trip) return
 
     try {
-      // Fetch destinations with vote counts
-      const { data: destinationsData, error: destError } = await supabase
-        .rpc('get_destinations_with_votes', { trip_id: trip.id })
-
-      // If RPC doesn't exist, fall back to regular query
-      const { data: destinations, error: destError2 } = await supabase
+      // Fetch destinations with vote counts - try RPC first, fall back to regular query
+      const { data: destinations, error: destError } = await supabase
         .from('destinations')
         .select('*')
         .eq('trip_id', trip.id)
 
-      if (destError2) throw destError2
+      if (destError) throw destError
 
       // Fetch dates with vote counts  
       const { data: dates, error: datesError } = await supabase
@@ -78,7 +74,7 @@ export default function VoteModal({ isOpen, onClose, trip, onVoteSuccess }: Vote
     } catch (error) {
       console.error('Error fetching trip options:', error)
     }
-  }
+  }, [trip])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -187,7 +187,6 @@ export default function Home() {
                 trip={trip}
                 onVote={handleVote}
                 onViewResults={handleViewResults}
-                onRefresh={fetchTrips}
               />
             ))}
           </div>

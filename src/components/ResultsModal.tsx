@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Trip, Destination, RidingDate, Vote } from '@/types'
+import { useState, useEffect, useCallback } from 'react'
+import { Trip } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 interface ResultsModalProps {
@@ -23,13 +23,7 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
   const [destinationResults, setDestinationResults] = useState<VoteResult[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (trip && isOpen) {
-      fetchResults()
-    }
-  }, [trip, isOpen])
-
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     if (!trip) return
 
     setLoading(true)
@@ -68,9 +62,9 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
 
       // Process destination results
       const destMap = new Map<string, VoteResult>()
-      destinationVotes?.forEach((vote: any) => {
-        if (vote.destinations) {
-          const dest = vote.destinations
+      destinationVotes?.forEach((vote: {destinations: {id: string, name: string}[], voter_name: string}) => {
+        if (vote.destinations && vote.destinations.length > 0) {
+          const dest = vote.destinations[0] // Take the first destination
           const existing = destMap.get(dest.id) || {
             id: dest.id,
             name: dest.name,
@@ -86,9 +80,9 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
 
       // Process date results
       const dateMap = new Map<string, VoteResult>()
-      dateVotes?.forEach((vote: any) => {
-        if (vote.riding_dates) {
-          const date = vote.riding_dates
+      dateVotes?.forEach((vote: {riding_dates: {id: string, date: string}[], voter_name: string}) => {
+        if (vote.riding_dates && vote.riding_dates.length > 0) {
+          const date = vote.riding_dates[0] // Take the first date
           const existing = dateMap.get(date.id) || {
             id: date.id,
             name: formatDate(date.date),
@@ -109,7 +103,13 @@ export default function ResultsModal({ isOpen, onClose, trip }: ResultsModalProp
     } finally {
       setLoading(false)
     }
-  }
+  }, [trip])
+
+  useEffect(() => {
+    if (trip && isOpen) {
+      fetchResults()
+    }
+  }, [trip, isOpen, fetchResults])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

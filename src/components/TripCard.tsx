@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Trip, Destination, RidingDate } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -8,24 +8,14 @@ interface TripCardProps {
   trip: Trip
   onVote: (tripId: string) => void
   onViewResults: (tripId: string) => void
-  onRefresh?: () => void
 }
 
-export default function TripCard({ trip, onVote, onViewResults, onRefresh }: TripCardProps) {
+export default function TripCard({ trip, onVote, onViewResults }: TripCardProps) {
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [dates, setDates] = useState<RidingDate[]>([])
   const [participantCount, setParticipantCount] = useState(0)
 
-  const refreshData = () => {
-    fetchTripData()
-    onRefresh?.()
-  }
-
-  useEffect(() => {
-    fetchTripData()
-  }, [trip.id, trip]) // Add trip as dependency so it re-fetches when trip data changes
-
-  const fetchTripData = async () => {
+  const fetchTripData = useCallback(async () => {
     try {
       // Fetch destinations
       const { data: destinationsData, error: destError } = await supabase
@@ -83,7 +73,11 @@ export default function TripCard({ trip, onVote, onViewResults, onRefresh }: Tri
     } catch (error) {
       console.error('Error fetching trip data:', error)
     }
-  }
+  }, [trip.id])
+
+  useEffect(() => {
+    fetchTripData()
+  }, [fetchTripData])
 
   const getTopDestination = () => {
     if (destinations.length === 0) return null

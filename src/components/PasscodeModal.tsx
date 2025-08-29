@@ -25,7 +25,7 @@ export default function PasscodeModal({ isOpen, onClose, onSuccess, tripTitle }:
       // Pass the entered passcode to the parent component for verification
       onSuccess(passcode.trim())
       setPasscode('')
-    } catch (error) {
+    } catch {
       setError('Invalid passcode. Please try again.')
     } finally {
       setIsVerifying(false)
