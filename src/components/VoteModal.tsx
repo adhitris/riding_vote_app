@@ -19,12 +19,6 @@ export default function VoteModal({ isOpen, onClose, trip, onVoteSuccess }: Vote
   const [dates, setDates] = useState<RidingDate[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (trip && isOpen) {
-      fetchTripOptions()
-    }
-  }, [trip, isOpen, fetchTripOptions])
-
   const fetchTripOptions = useCallback(async () => {
     if (!trip) return
 
@@ -75,6 +69,12 @@ export default function VoteModal({ isOpen, onClose, trip, onVoteSuccess }: Vote
       console.error('Error fetching trip options:', error)
     }
   }, [trip])
+
+  useEffect(() => {
+    if (trip && isOpen) {
+      fetchTripOptions()
+    }
+  }, [trip, isOpen, fetchTripOptions])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
